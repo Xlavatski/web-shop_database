@@ -33,7 +33,7 @@ BEGIN
 END;
 /
 
---primjer 3 (funkcija koja vraća sve proizvode i cijene od dobavljaca kojeg smo unjeli)
+--primjer 3 (funkcija koja vraća sve proizvode i cijene od dobavljaca kojeg smo unijeli)
 
 CREATE OR REPLACE FUNCTION dobavljac_proizvodi (dobavljac DOBAVLJACI.ime_dobavljaca%TYPE)
 RETURN SYS_REFCURSOR IS
@@ -161,7 +161,6 @@ IS
         FOR UPDATE;
 BEGIN
     FOR r IN c_proizvodi LOOP
---deklariranjem varijabli iz kursora uvijek moramo naznačiti ključno slovo r.ime 
         IF r.cijena > plata THEN
             UPDATE PROIZVODI SET cijena = cijena * pro_postotak
             WHERE CURRENT OF c_proizvodi;
@@ -288,7 +287,7 @@ BEGIN
     ispisi_proizvode(4);
 END;
 
---primjer 8 (Upisom dobavljaca ispisuju se svi proizvode i cijene tog dobavljaca)
+--primjer 8 (Upisom dobavljaca ispisuju se svi proizvodi i cijene tog dobavljaca)
 
 CREATE OR REPLACE PROCEDURE vrati_proizvode (dobavljac DOBAVLJACI.ime_dobavljaca%TYPE)
 IS
