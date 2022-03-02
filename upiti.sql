@@ -121,6 +121,16 @@ SELECT ime_kupca FROM KUPCI
 WHERE idKupac NOT IN (SELECT DISTINCT idKupac FROM NARUDZBE 
 WHERE idkupac IS NOT NULL);
 
+--podupit koji vraća najskuplji proizvod svakog dobavljaca
+
+SELECT proizvodi.naziv, dobavljaci.ime_dobavljaca, proizvodi.cijena 
+FROM PROIZVODI INNER JOIN DOBAVLJACI ON proizvodi.iddobavljac = dobavljaci.iddobavljac
+WHERE (ime_dobavljaca, cijena) IN (
+                                SELECT d.ime_dobavljaca, MAX(p.cijena) as cijena FROM dobavljaci d
+                                INNER JOIN proizvodi p ON p.iddobavljac = d.iddobavljac
+                                GROUP BY d.ime_dobavljaca
+                                );
+
 --podupit vraca koliko je proizvoda prodano na određeni dan
 
 SELECT datumNar, SUM(kolicina) AS KOL, (SELECT AVG(SUM(kolicina))
