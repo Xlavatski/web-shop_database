@@ -142,3 +142,17 @@ WHERE NARUDZBE.idNarudzba = DETALJINAR.idNarudzba
 GROUP BY datumNar
 ORDER BY KOL DESC
 FETCH NEXT 5 ROWS ONLY;
+
+--korelirajući upiti (upotrebljavaju se kada imamo problema sa join-ovima)
+
+SELECT * 
+FROM KUPCI k
+WHERE NOT EXISTS (SELECT 1 FROM NARUDZBE n WHERE k.idkupac = n.idkupac);
+
+--podupit koji vraca drugu najvecu vrijednsot proizvoda svakog dobavljaca 
+
+select idDobavljac, naziv, ime_dobavljaca, cijena from (
+    select row_number() over (partition by p.idDobavljac order by p.cijena desc) row_broj,
+    p.idDobavljac, p.naziv, p.cijena, d.ime_dobavljaca from proizvodi p
+    join dobavljaci d on p.iddobavljac = d.iddobavljac
+) where row_broj = 2;
