@@ -156,3 +156,14 @@ select idDobavljac, naziv, ime_dobavljaca, cijena from (
     p.idDobavljac, p.naziv, p.cijena, d.ime_dobavljaca from proizvodi p
     join dobavljaci d on p.iddobavljac = d.iddobavljac
 ) where row_broj = 2;
+
+--primjer upotrebe case statementa (upit vraca "stanje" cijena_vece_manje po određenom uvjetu za svakog dobavljaca)
+
+select d.iddobavljac, dob.cijena_vece_manje, d.ime_dobavljaca from (
+    select iddobavljac, sum(case 
+                when cijena > 5000 then cijena
+                else -cijena
+                end) cijena_vece_manje
+    from proizvodi
+    group by iddobavljac) dob
+join dobavljaci d on dob.iddobavljac = d.iddobavljac;
