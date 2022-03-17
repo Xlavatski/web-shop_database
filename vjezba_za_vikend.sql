@@ -54,9 +54,17 @@ select substr('ibis.LOG_IZVODI_TEST_seq.nextval,  ', 1, 24) nadi from dual;
 
 --PROUČAVANJE ZA VIKEND: oracle utl_file excel format
 
+--funkije za pronalaženje grešaka
+
+when others then
+  Dbms_Output.put_line ( DBMS_UTILITY.FORMAT_ERROR_STACK() );
+  Dbms_Output.put_line ( DBMS_UTILITY.FORMAT_ERROR_BACKTRACE() );
+
+--skripta za čitanje i pisanje excal file-a 
+
 declare
     -- treba sigurno
-    l_file_out varchar2(100) := 'nova_lista_' || to_number(to_char(systimestamp, 'hh24miss')) || '.csv';
+    l_file_out varchar2(100) := 'nova_lista_Dino' || to_number(to_char(systimestamp, 'hh24miss')) || '.csv';
     l_file_in varchar2(100) := 'ticket_skripta.csv';
     f_log utl_file.file_type;
     f_load utl_file.file_type;
@@ -73,12 +81,14 @@ declare
     --Polja
     t_maticni_broj number;
     
-    t_tip_klijenta varchar2(10);
+    t_tip_klijenta varchar2(1000);
     t_vazi_od date;
     t_vazi_do date;
     t_naziv_opcine varchar2(100);
     t_naziv_zupanije varchar2(100);
     t_naziv_drzave varchar2(100);
+    
+    --t_opis varchar2(1000);
     
     --Funkcija
     function split (p_in_string varchar2, p_delim varchar2) return t_array  
@@ -112,6 +122,9 @@ begin
     -- u begin bloku – otvaranje excela
     f_log := utl_file.fopen('PL_OUT', l_file_out, 'W'); -- write (novi excel)
     f_load := utl_file.fopen('PL_IN', l_file_in, 'R'); -- read
+    
+    --ako ne radi ovo makni
+    utl_file.put_line(f_log,'TIP_KLIJENTA '||';'||'DATUM_AKTIVACIJE '||';'|| 'DATUM_DEAKTIVACIJE ' ||';'|| 'NAZIV_OPCINE '||';'|| 'NAZIV_ZUPANIJE '||';'|| 'NAZIV_DRZAVE');
     loop 
         utl_file.get_line(f_load, l_ulaz);
         if l_preskok = 0 then
@@ -122,22 +135,32 @@ begin
         --Polja iz file-a 
         t_maticni_broj := to_number(l_arr(1));
         
-        dbms_output.put_line(t_maticni_broj);
+        --dbms_output.put_line(t_maticni_broj);
          begin
             select count(*) into l_count
-            from klijenti k join klijenti_adrese ad on k.id = ad.kli_id
+            from klijenti k
             where k.maticni_broj = t_maticni_broj;
             --za log
             if l_count = 0 then
+                --dbms_output.put_line('Nepoznat klijent: ' || t_maticni_broj);
                 utl_file.put_line(f_log,'Nepoznat klijent;' || t_maticni_broj);--Navesti polja za log
                 continue;
             elsif l_count > 1 then
+                --dbms_output.put_line('Vise od 1: ' || t_maticni_broj);
                 utl_file.put_line(f_log,'Vise od 1;' || t_maticni_broj);--Navesti polja za log
                 continue;
+                --else 
+                --dbms_output.put_line('Učitan ' || t_maticni_broj);
             end if;
             
             begin
-                select k.kli_type tip_klijenta, k.vazi_od datum_aktivacije, k.vazi_do datum_deaktivacije, og.naziv naziv_opcine, z.naziv naziv_zupanije ,d.naziv naziv_drzave
+                select 
+                    k.tip_klijenta || ' - ' || (select opis from cg_ref_codes_v where naziv = 'TIP KLIJENTA' and vrijednost = k.tip_klijenta )tip_klijenta, 
+                    k.vazi_od datum_aktivacije, 
+                    k.vazi_do datum_deaktivacije, 
+                    og.naziv naziv_opcine, 
+                    z.naziv naziv_zupanije,
+                    d.naziv naziv_drzave
                 into t_tip_klijenta, t_vazi_od, t_vazi_do, t_naziv_opcine, t_naziv_zupanije, t_naziv_drzave
                 from klijenti k join klijenti_adrese ad on k.id = ad.kli_id
                 join adrese a on a.id = ad.ade_id
@@ -145,24 +168,23 @@ begin
                 join drzave d on k.drz_id = d.id
                 join opcine_gradovi og on og.id = m.opg_id
                 join zupanije z on z.id = og.zup_id
-                where k.maticni_broj = t_maticni_broj;
+                where k.maticni_broj = t_maticni_broj AND ad.tip_adrese = 91 and ad.vazi_do is null;
                 
                 exception
                 when others then
                     utl_file.put_line(f_log,'ERR;'||sqlerrm || t_maticni_broj);--Navesti polja za log
+                    --dbms_output.put_line('ERR;'||sqlerrm || t_maticni_broj);
                     continue;
             end;
             
             -- pisanje jednog retka
-            --zašto tu treba biti f_log??
-            utl_file.put_line(f_log,t_tip_klijenta||';'||t_vazi_od||';'|| t_vazi_do ||';'||t_naziv_opcine||';'||t_naziv_zupanije||';'||t_naziv_drzave);
-            
-            --možda tu nešto još treba?
-            exception 
+            utl_file.put_line(f_log,t_tip_klijenta||';'||t_vazi_od||';'|| t_vazi_do ||';'||commons.f_cro_alpha_converter(t_naziv_opcine)||';'||commons.f_cro_alpha_converter(t_naziv_zupanije)||';'|| commons.f_cro_alpha_converter(t_naziv_drzave));
+            --dbms_output.put_line(t_tip_klijenta||';'||t_vazi_od||';'|| t_vazi_do ||';'||t_naziv_opcine||';'||t_naziv_zupanije||';'||t_naziv_drzave);
+            /*exception 
             when others then
-                dbms_output.put_line(f_log,'Nema podataka za;' || t_maticni_broj ||':::'||DBMS_UTILITY.FORMAT_ERROR_STACK||'-'||DBMS_UTILITY.FORMAT_ERROR_BACKTRACE);
+                dbms_output.put_line('Nema podataka za;' || t_maticni_broj ||':::'||DBMS_UTILITY.FORMAT_ERROR_STACK||'-'||DBMS_UTILITY.FORMAT_ERROR_BACKTRACE);
                 --utl_file.put_line(f_log,'Nema podataka za;' || t_maticni_broj ||':::'||DBMS_UTILITY.FORMAT_ERROR_STACK||'-'||DBMS_UTILITY.FORMAT_ERROR_BACKTRACE);--Navesti polja za log
-         continue; 
+         continue;*/ 
         end;
         end loop;
     -- na kraju programa zatavaranje oba
@@ -176,3 +198,4 @@ begin
        utl_file.fclose(f_log);
 end;
 /
+
