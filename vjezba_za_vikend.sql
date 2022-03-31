@@ -1,5 +1,5 @@
 SET SERVEROUTPUT ON;
-
+--https://stackoverflow.com/questions/21286245/extract-email-from-field-using-oracle-regexp
 declare 
     cursor c_servis is select * 
     from all_source 
