@@ -1,3 +1,57 @@
+
+create table test_partije (
+    id number generated always as identity primary key,
+    iban_broj varchar2(200) not null,
+    vazi_do date,
+    status_valute number
+); 
+
+select * from test_partije;
+
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR555',date '2022-01-14', 5);
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR555', date '2022-01-14', 5);
+
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR333',null, 5);
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR3333', null, 6);
+
+
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR3333',date '2022-01-14', 5);
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR333', null, 6);
+
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR1234',date '2022-01-14', 6);
+insert into test_partije(iban_broj, vazi_do, status_valute) VALUES ('HR1234', null, 5);
+
+--finalni
+with podaci as (
+    SELECT
+    id, 
+    iban_broj,
+    vazi_do,
+    status_valute,
+    case 
+        when vazi_do is null and status_valute = 6 then 'jedan'
+        when vazi_do is not null and status_valute = 6 then 'dva'
+        when vazi_do is null and status_valute <> 6 then 'tri'
+        when vazi_do is not null and status_valute <> 6 then 'cetri'
+    end test
+FROM test_partije
+where iban_broj = 'HR3333'
+)
+select * from 
+(
+    select podaci.iban_broj, podaci.vazi_do, podaci.status_valute, podaci.test 
+    from podaci
+)
+pivot 
+(
+    count(test)
+    for test in('jedan', 'dva', 'tri', 'cetri')
+)
+--group by iban_broj
+;
+
+
+
 SET SERVEROUTPUT ON;
 --https://stackoverflow.com/questions/21286245/extract-email-from-field-using-oracle-regexp
 declare 
