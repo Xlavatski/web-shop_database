@@ -1,3 +1,55 @@
+--za pekete
+SELECT
+    ime_paketa,
+    COUNT(ime_paketa) broj_zapisa
+FROM
+    (
+        SELECT
+            CASE
+                WHEN instr(err_imepro, '.') = 0 THEN
+                    err_imepro
+                ELSE
+                    substr(err_imepro, 0, instr(err_imepro, '.') - 1)
+            END ime_paketa
+        FROM
+            errlog
+    )
+GROUP BY
+    ime_paketa
+UNION
+SELECT
+    err_imepro ime_paketa,
+    COUNT(err_imepro) broj_zapisa
+FROM
+    errlog
+GROUP BY
+    err_imepro
+order by ime_paketa;
+
+select distinct
+       ime_programa,
+       ime_podprograma,
+       count(*) over (partition by ime_programa) as count_program,
+       count(*) over (partition by ime_programa, ime_podprograma) as count_podprogram
+from (
+  select case
+           when instr(err_imepro, '.') != 0 then
+             substr(err_imepro, 1, instr(err_imepro, '.') - 1)
+           else
+             err_imepro
+         end as ime_programa,
+         case
+           when instr(err_imepro, '.') != 0 then
+             substr(err_imepro, instr(err_imepro, '.') + 1)
+           else
+             null
+         end as ime_podprograma
+         
+  from errlog
+)
+order by ime_programa, count_podprogram desc;
+
+--staro
 SET SERVEROUTPUT ON;
 --https://stackoverflow.com/questions/21286245/extract-email-from-field-using-oracle-regexp
 declare 
