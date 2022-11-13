@@ -26,6 +26,8 @@ GROUP BY
     err_imepro
 order by ime_paketa;
 
+--prvi order po abecedi a drugi order po broju zapisa podprograma za moj gore
+
 select distinct
        ime_programa,
        ime_podprograma,
